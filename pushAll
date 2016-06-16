@@ -1,0 +1,9 @@
+#!/bin/bash
+
+git submodule foreach --recursive "
+	git push;
+	echo;
+"
+echo "Top:"
+git push
+echo

@@ -1,0 +1,20 @@
+#!/bin/bash
+
+if [ "$#" -ne 1 ]
+then
+	echo "Usage: ${0} <commit>"
+	exit 1
+fi
+
+commit=$1
+
+command="git merge --no-edit --verbose origin/${commit}"
+
+echo "Top:"
+${command}
+echo
+
+git submodule foreach --recursive "
+	${command} || true;
+	echo;
+"

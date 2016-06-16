@@ -1,0 +1,20 @@
+#!/bin/bash
+
+if [ "$#" -ne 1 ]
+then
+	echo "Usage: ${0} <branch>"
+	exit 1
+fi
+
+branch=$1
+
+echo "Top:"
+git checkout -b "${branch}"
+git push -u origin "${branch}"
+echo
+
+git submodule foreach --recursive "
+	git checkout -b '${branch}' ; 
+	git push -u origin '${branch}' ;
+	echo;
+"

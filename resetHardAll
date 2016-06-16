@@ -1,0 +1,23 @@
+#!/bin/bash
+
+if [ "$#" -ne 1 ]
+then
+	echo "Usage: ${0} <branch>"
+	exit 1
+fi
+
+branch=$1
+
+command="git checkout ${branch}"
+
+echo
+
+git submodule foreach --recursive "
+	git checkout ${branch}
+	git reset --hard origin/${branch}
+	echo;
+"
+
+echo "Top:"
+git checkout ${branch}
+git reset --hard origin/${branch}

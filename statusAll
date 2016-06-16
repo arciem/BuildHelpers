@@ -1,0 +1,9 @@
+#!/bin/bash
+
+git submodule foreach --recursive "
+	git status;
+	echo;
+"
+echo "Top:"
+git status
+echo

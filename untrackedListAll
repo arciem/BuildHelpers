@@ -1,0 +1,9 @@
+#!/bin/bash
+
+git submodule foreach --recursive "
+	git clean -f -n ;
+	echo;
+"
+echo "Top:"
+git clean -f -n
+echo

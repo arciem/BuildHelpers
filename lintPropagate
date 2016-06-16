@@ -1,0 +1,5 @@
+#!/bin/bash
+
+find . -type f -name ".swiftlint.yml" | xargs -t -n 1 cp swiftlint.yml
+find . ! -path "./swiftlint.yml" -type f -name "swiftlint.yml" | xargs -t -n 1 cp swiftlint.yml
+find . ! -path "./RunLint.sh" -type f -name "RunLint.sh" | xargs -t -n 1 cp RunLint.sh

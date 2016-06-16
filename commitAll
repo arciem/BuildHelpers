@@ -1,0 +1,19 @@
+#!/bin/bash
+
+if [ "$#" -ne 1 ]
+then
+	echo "Usage: ${0} \"Commit comment...\""
+	exit 1
+fi
+
+comment=$1
+
+set -e
+
+git submodule foreach --recursive "
+	git commit -m '${comment}';
+	echo;
+"
+echo "Top:"
+git commit -m "${comment}"
+echo

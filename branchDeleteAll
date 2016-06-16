@@ -1,0 +1,19 @@
+#!/bin/bash
+
+if [ "$#" -ne 1 ]
+then
+	echo "Usage: ${0} <branch>"
+	exit 1
+fi
+
+branch=$1
+
+git submodule foreach --recursive "
+	git push origin --delete ${branch} ;
+	git branch -d ${branch} ;
+	echo;
+"
+echo "Top:"
+git push origin --delete ${branch}
+git branch -d ${branch}
+echo

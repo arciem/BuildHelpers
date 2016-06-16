@@ -1,0 +1,12 @@
+#!/bin/bash
+
+command="git pull --no-edit"
+
+echo "Top:"
+${command}
+echo
+
+git submodule foreach --recursive "
+	${command} || true;
+	echo;
+"

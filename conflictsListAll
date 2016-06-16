@@ -1,0 +1,11 @@
+#!/bin/bash
+
+set -e
+
+git submodule foreach --recursive "
+	git diff --name-only --diff-filter=U;
+	echo;
+"
+echo "Top:"
+git diff --name-only --diff-filter=U
+echo

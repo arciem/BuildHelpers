@@ -1,0 +1,9 @@
+#!/bin/bash
+
+git submodule foreach --recursive "
+	git add --verbose . ;
+	echo;
+"
+echo "Top:"
+git add --verbose .
+echo
