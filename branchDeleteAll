@@ -8,12 +8,6 @@ fi
 
 branch=$1
 
-git submodule foreach --recursive "
-	git push origin --delete ${branch} ;
-	git branch -d ${branch} ;
-	echo;
-"
-echo "Top:"
-git push origin --delete ${branch}
-git branch -d ${branch}
-echo
+script="branchDelete"
+dir=`dirname $0`
+${dir}/utils/scriptTopLast ${dir}/${script} ${branch}

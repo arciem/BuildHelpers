@@ -1,9 +1,5 @@
 #!/bin/bash
 
-git submodule foreach --recursive "
-	git branch -a;
-	echo;
-"
-echo "Top:"
-git branch -a
-echo
+script="branchList"
+dir=`dirname $0`
+${dir}/utils/scriptTopLast ${dir}/${script}

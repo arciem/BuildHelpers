@@ -1,12 +1,5 @@
 #!/bin/bash
 
-command="git pull --no-edit"
-
-echo "Top:"
-${command}
-echo
-
-git submodule foreach --recursive "
-	${command} || true;
-	echo;
-"
+script="pull"
+dir=`dirname $0`
+${dir}/utils/scriptTopFirst ${dir}/${script}

@@ -1,0 +1,14 @@
+#!/bin/bash
+
+source "`dirname $0`/colors"
+
+repo=`git rev-parse --show-toplevel`
+shortRepo=`basename ${repo}`
+
+branch=`git rev-parse --abbrev-ref HEAD`
+
+remoteBranch=`git for-each-ref --format='%(upstream:short)' $(git symbolic-ref -q HEAD)`
+
+echo
+# echo -e "${yellow}${shortRepo} : ${branch} : ${remoteBranch}${nc}"
+echo -e "${yellow}${shortRepo}${nc}"

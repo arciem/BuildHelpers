@@ -8,6 +8,6 @@ fi
 
 commit=$1
 
-script="merge"
-dir=`dirname $0`
-${dir}/utils/scriptTopFirst ${dir}/${script} ${commit}
+`dirname $0`/utils/gitHeader
+
+git merge --no-edit --verbose origin/${commit}

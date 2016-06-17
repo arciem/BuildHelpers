@@ -1,9 +1,5 @@
 #!/bin/bash
 
-git submodule foreach --recursive "
-	git push;
-	echo;
-"
-echo "Top:"
-git push
-echo
+script="push"
+dir=`dirname $0`
+${dir}/utils/scriptTopLast ${dir}/${script}

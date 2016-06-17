@@ -1,0 +1,9 @@
+#!/bin/bash
+
+set -e
+
+script=$1
+arg=$2
+git submodule --quiet foreach --recursive ${script} ${arg}
+${script} ${arg}
+echo

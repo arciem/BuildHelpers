@@ -1,0 +1,14 @@
+#!/bin/bash
+
+if [ "$#" -ne 1 ]
+then
+	echo "Usage: ${0} <branch>"
+	exit 1
+fi
+
+branch=$1
+
+`dirname $0`/utils/gitHeader
+
+git push origin --delete ${branch} || true
+git branch -d ${branch} || true

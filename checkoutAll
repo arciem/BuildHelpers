@@ -2,19 +2,12 @@
 
 if [ "$#" -ne 1 ]
 then
-	echo "Usage: ${0} <branch>"
+	echo "Usage: ${0} <commit>"
 	exit 1
 fi
 
-branch=$1
+commit=$1
 
-command="git checkout ${branch}"
-
-echo "Top:"
-${command}
-echo
-
-git submodule foreach --recursive "
-	${command} || true;
-	echo;
-"
+script="checkout"
+dir=`dirname $0`
+${dir}/utils/scriptTopFirst ${dir}/${script} ${commit}

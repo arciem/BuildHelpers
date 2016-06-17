@@ -8,6 +8,7 @@ fi
 
 commit=$1
 
-script="merge"
-dir=`dirname $0`
-${dir}/utils/scriptTopFirst ${dir}/${script} ${commit}
+`dirname $0`/utils/gitHeader
+
+git checkout ${commit}
+git reset --hard origin/${commit}

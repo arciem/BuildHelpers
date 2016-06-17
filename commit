@@ -8,6 +8,4 @@ fi
 
 comment=$1
 
-script="commit"
-dir=`dirname $0`
-${dir}/utils/scriptTopLast ${dir}/${script} ${commit}
+git commit -m '${comment}' || true

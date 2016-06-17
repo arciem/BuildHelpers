@@ -1,0 +1,8 @@
+#!/bin/bash
+
+utils=`dirname $0`
+script=$1
+arg=$2
+
+${utils}/gitHeader
+${script} ${arg}

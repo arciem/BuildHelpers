@@ -1,9 +1,5 @@
 #!/bin/bash
 
-git submodule foreach --recursive "
-	git clean -f -n ;
-	echo;
-"
-echo "Top:"
-git clean -f -n
-echo
+script="untrackedList"
+dir=`dirname $0`
+${dir}/utils/scriptTopLast ${dir}/${script}
