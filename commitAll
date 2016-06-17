@@ -10,4 +10,4 @@ comment=$1
 
 script="commit"
 dir=`dirname $0`
-${dir}/utils/scriptTopLast ${dir}/${script} ${commit}
+${dir}/utils/scriptTopLast ${dir}/${script} ${comment}

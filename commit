@@ -8,4 +8,5 @@ fi
 
 comment=$1
 
+`dirname $0`/utils/gitHeader
 git commit -m '${comment}' || true
