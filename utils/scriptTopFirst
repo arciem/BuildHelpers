@@ -4,6 +4,6 @@ set -e
 
 script=$1
 arg=$2
-${script} ${arg}
-git submodule --quiet foreach --recursive ${script} ${arg}
+"${script}" "${arg}"
+git submodule --quiet foreach --recursive "${script}" "${arg}"
 echo

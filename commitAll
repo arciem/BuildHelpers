@@ -7,7 +7,8 @@ then
 fi
 
 comment=$1
+echo "comment: ${comment}"
 
 script="commit"
 dir=`dirname $0`
-${dir}/utils/scriptTopLast ${dir}/${script} ${comment}
+"${dir}/utils/scriptTopLast" "${dir}/${script}" "${comment}"

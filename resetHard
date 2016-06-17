@@ -10,5 +10,5 @@ commit=$1
 
 `dirname $0`/utils/gitHeader
 
-git checkout ${commit}
-git reset --hard origin/${commit}
+git checkout "${commit}"
+git reset --hard "origin/${commit}"

@@ -10,4 +10,4 @@ branch=$1
 
 script="branchNew"
 dir=`dirname $0`
-${dir}/utils/scriptTopFirst ${dir}/${script} ${branch}
+"${dir}/utils/scriptTopFirst" "${dir}/${script}" "${branch}"
