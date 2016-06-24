@@ -1,0 +1,5 @@
+#!/bin/bash
+
+script="stashPop"
+dir=`dirname $0`
+"${dir}/utils/scriptTopFirst" "${dir}/${script}"
