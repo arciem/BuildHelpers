@@ -10,4 +10,4 @@ commit=$1
 
 `dirname $0`/utils/gitHeader
 
-git checkout "${commit}"
+git checkout "${commit}" || true

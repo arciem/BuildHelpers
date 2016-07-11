@@ -10,4 +10,4 @@ branch=$1
 
 script="branchDelete"
 dir=`dirname $0`
-"${dir}/utils/scriptTopLast" "${dir}/${script} ${branch}"
+"${dir}/utils/scriptTopLast" "${dir}/${script}" "${branch}"

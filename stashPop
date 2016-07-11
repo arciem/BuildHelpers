@@ -2,4 +2,4 @@
 
 `dirname $0`/utils/gitHeader
 
-git stash pop
+git stash pop || true
