@@ -10,4 +10,4 @@ comment=$1
 echo "commit comment: ${comment}"
 
 `dirname $0`/utils/gitHeader
-git commit -m "${comment}" || true
+git commit -a -m "${comment}" || true

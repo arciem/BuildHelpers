@@ -3,7 +3,7 @@
 source "`dirname $0`/colors"
 
 repo=`git rev-parse --show-toplevel`
-shortRepo=`basename ${repo}`
+shortRepo=`basename "${repo}"`
 
 branch=`git rev-parse --abbrev-ref HEAD`
 
