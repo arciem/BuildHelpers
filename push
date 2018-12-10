@@ -2,4 +2,4 @@
 
 `dirname $0`/utils/gitHeader
 
-git push
+git push && git push --tags
