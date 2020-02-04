@@ -1,0 +1,13 @@
+#!/bin/bash
+docker run \
+    --rm \
+    --interactive \
+    --tty \
+    --privileged \
+    --volume "$(pwd):/project" \
+    --workdir "/project" \
+    --env AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
+    --env AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
+    --env AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION \
+    swiftdev:3.1 \
+    /bin/bash

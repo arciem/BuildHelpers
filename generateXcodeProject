@@ -1,3 +1,11 @@
 #!/bin/bash
 
-swift package generate-xcodeproj
+SETTINGS="settings.xcconfig"
+
+if [ -e ${SETTINGS} ]; then
+    echo "Using ${SETTINGS}"
+    swift package generate-xcodeproj --xcconfig-overrides ${SETTINGS}
+else
+    echo "Using default settings"
+    swift package generate-xcodeproj
+fi

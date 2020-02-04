@@ -6,5 +6,5 @@ then
     DerivedData="~/Library/Developer/Xcode/DerivedData"
 fi
 
-echo "Deleting: ${DerivedData}"
-rm -rf ${DerivedData}
+echo "Deleting contents of: ${DerivedData}"
+rm -rf ${DerivedData}/*
