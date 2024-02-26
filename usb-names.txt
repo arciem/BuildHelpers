@@ -1,0 +1,16 @@
+100000100,MacBook
+100000337,USB C Port 1 (top/front)
+10000034d,USB C Port 2 (bottom/rear)
+10002ccf6,Sabrent 7-port hub (USB2.1)
+10002cd4e,Sabrent 7-port hub (USB2.1)
+10002ccf8,Sabrent 7-port hub (USB3.2)
+10002cd26,Sabrent 7-port hub (USB3.2)
+10002ddd9,Studio HD
+100000995,Monitor 4-port USB 3.1 Hub
+10002dec2,Alpha Backup HD
+10002eb08,Alpha Backup 2 HD
+10002ee77,Teleprompter Hub (USB3.1)
+10002ee8b,Teleprompter Hub (USB3.1)
+10002ee9f,Teleprompter Hub (USB2.1)
+10002eeb1,Teleprompter Hub (USB2.1)
+100002ad5,Studio Hub

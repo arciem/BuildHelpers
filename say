@@ -1,0 +1,191 @@
+#!/usr/local/bin/python3
+# -*- coding: utf-8 -*-
+
+# Phoneme guide:
+# http://developer.apple.com/library/mac/#documentation/UserExperience/Conceptual/SpeechSynthesisProgrammingGuide/Phonemes/Phonemes.html
+#
+# Regular Expressions guide:
+# http://docs.python.org/library/re.html
+
+import sys, re
+from subprocess import call
+
+array1 = (
+    (r'U\.S\.', r' U S '),
+    (r'@', r' at-sign '),
+    (r'\s\|\s', r' pipe '),
+    (r'\s\.\.\s', r' dot dot '),
+    (r'\s_\s', r' underscore '),
+    (r'\(\)', r'empty-parentheses'),
+    (r'\{\}', r'empty-curly-braces'),
+    (r'\[\]', r'empty-square-brackets'),
+    (r'<(.{1,20}?)>', r' over \1'),
+    # (r'\((.{1,20}?)\)', r' of \1'),
+    (r'\s\?\s', r' question-mark '),
+    (r'\s=>\s', r' fat-arrow '),
+    (r'\s->\s', r' arrow '),
+    (r'\s<\s', r'less-than'),
+    (r'\s>\s', r'greater-than'),
+    (r'\s>=\s', r'greater-than-or-equal-to'),
+    (r'\s<=\s', r'less-than-or-equal-to'),
+    (r'\^', r'(carat)'),
+    (r'´', r"'"),
+    (r'\.\.\.', r'[[slnc 500]]'), # Pause on ellipsis
+    (r'·', "point"),
+    (r"$", r'. . .'),
+    (r'(\d+)\s?[-–—]\s?(\d+)%', r'\1 to \2 percent'),
+    #(r'\s"(\S)', r' quote, \1'),
+    #(r'(\S)"\s', r'\1, end quote, '),
+    (r'“(.{1,50}?)”', r', \1, '),
+    #(r'“', r'quote,'),
+    #(r'”', r', end quote, '),
+    (r'\.$', r'.\n\n'),
+    (r'(\d)\.(\d)', r'\1 point \2'),
+    (r'(\D)\.(\w)', r'\1 dot \2'),
+    (r'(\w)\.(\w)', r'\1 dot \2'),
+    (r'(\D)\.(\d+)', r'\1. Reference \2.'),
+    (r'Mt\.', r'mount'),
+    (r'e\.g\.', r'for example'),
+    (r'U\.S\.', r'United States'),
+    (r'\n+', r'[[slnc 200]]'), # Pause on newlines
+    (r'(\w)-(\w)', r'\1 \2'),
+    (r'([^:]*)::([^:]*)', r'\1 double-colon \2'),
+    (r'/', r' slash '),
+    (r'\[\d+\]', r''), # Remove Wikipedia footnote references [xx]
+    (r'(\w+?)- (\w+?)', r'\1\2') # Close hyphenated words
+)
+
+array2 = (
+    # General
+#	('live', 'lIHv'),
+
+    # Occult
+#	('Aleister', '1AElEHstr'),
+#	('Anubis', '1AEn2AXbIXs'),
+#	('Aquino', 'AXkw1IYnOW'),
+#	('Crowley', 'kr1OWlIY'),
+#	('Enochian', 'AXn1OWkIYAXn'),
+#	('grimoire', 'grIHmw1AOr'),
+#	('Gurdjieff', 'g1UXrJAXf'),
+#	('initiates', 'IHn1IXSIYAXts'),
+#	('Ipsissimus', '2IHps1IHsIHmUXs'),
+#	('LaVey', 'lAXv1EY'),
+#	('LaVeyan', 'lUX +vEYIHn'),
+#	('lycanthropy', 'lAYk1AEnTrAXp2IY'),
+#	('mage', 'm1EYJ'),
+#	('magister', 'm1AEJihstAXr'),
+#	('magistry', 'm1AEJihstrIY'),
+#	('magus', 'm1EYgAXs'),
+#	('Nemo', 'n1IYmOW'),
+#	('Satanism', 's1EYtn2IHzm'),
+#	('templi', 't1EHmplIY'),
+#	('vampirism', 'v1AEmpAXr2IHzAXm'),
+#	('Walpurgisnacht', 'wAOlp1AXrgIHsnAOkt'),
+#	('Xem', 'k1EHm'),
+#	('Xeper', 'k1EHfAXr'),
+#	('gods', 'gAAdz'),
+#	(r'I\s*(°|degree)', 'fUXrst dUXgr1IY'),
+#	(r'II\s*(°|degree)', 's1EHk2AXndUXgr1IY'),
+#	(r'III\s*(°|degree)', 'T1IXrdUXgr1IY'),
+#	(r'IV\s*(°|degree)', 'f1OWrT dUXgr1IY'),
+#	(r'V\s*(°|degree)', 'f1IHfT dUXgr1IY'),
+#	(r'VI\s*(°|degree)', 's1IXkT dUXgr1IY'),
+#	(r'VII\s*(°|degree)', 's1EHvAXnT dUXgr1IY'),
+#	(r'VIII\s*(°|degree)', '1EYtT dUXgr1IY'),
+#	(r'IX\s*(°|degree)', 'n1AYnT dUXgr1IY'),
+#	(r'X\s*(°|degree)', 't1EHnT dUXgr1IY'),
+
+    # Philosophy
+#	('Nietzsche', 'n1IYCIY'),
+#	('praxis', 'prAEksIHs'),
+
+    # Politics
+#	('anarcho', '2AEn1AArkOW'),
+#	('memetic', 'mIYmEHt1IHk'),
+#   ('memeplexes', 'mIYm1plEHksAXz'),
+#	('memeplex', 'mIYm1plEHks'),
+#	('meme', 'mIYm'),
+
+    # Physiology
+#	('androgenic', 'AEndrOWJ1EHnIXk'),
+#	('endogenous', 'EHnd1AOJEHnIXs'),
+#	('exogenous', 'IXks1AOJEHnIXs'),
+#	('periodization', 'pIXrIYUXd2UXz1EYSUXn'),
+#	('periodized', 'pIXrIYUXdAYzd'),
+#	('periodize', 'pIXrIYUXdAYz'),
+#	('progestin', 'prOWJ1EHstIXn'),
+#	('reps', '~rEHps'),
+
+    # Personal Improvement
+#	('Csikszentmihalyi', 'C2IXksEHntm1IYhAY'),
+
+    # History
+#	('Elizabeth I', 'EHl1IHzAXb2EHT DAX f1UXrst'),
+
+    # Miscellaneous
+#	('kazillion', 'kUXz1IHlIYUXn'),
+#	('snazzy', 'sn1AEzIY'),
+
+    # Men's Rights
+#	('hypergamy', 'hAYp1IXrgAXmIY'),
+#	('hypergamous', 'hAYp1IXrgAXmUXs'),
+
+  # Technology
+    ('destructuring', 'de-structuring'),
+    ('tuples', 'tooples'),
+    ('tuple', 'toople'),
+    ('Rustaceans', 'rustaishuns'),
+    ('Rustacean', 'rustaishun'),
+    ('iteration', 'iteraishun'),
+    ('enums', 'eenums'),
+    ('enum', 'eenum'),
+    ('conciseness', 'concise-ness'),
+    ('enumerated', 'enumerayted'),
+    ('iterator', 'itarator'),
+    ('iterators', 'itarators'),
+    ('dyn', 'dine'),
+    ('deref', 'dee-ref'),
+    ('println', 'print-line'),
+    ('rustc', 'rust-c'),
+    ('serde', 'ser-day'),
+    ('TOML', 'Tomal'),
+    ('an SQLite', 'a SQLite'),
+    ('SQLite store', 'sequel light store'),
+    ('SQLite', 'sequel light'),
+    ('async', 'a-sink'),
+    ('uniquing', 'unique-ing'),
+    ('pecs', 'peks'),
+    ('cbor', 'see-bore'),
+    ('dcbor', 'd-see-bore')
+)
+
+originalText = ''
+for f in sys.stdin:
+    originalText += f
+
+# Split the text into paragraphs
+paragraphs = re.split(r'\s*\n\s*\n\s*', originalText)
+
+# Remove leading and trailing whitespace and join lines for each paragraph
+processedParagraphs = [' '.join(p.strip() for p in paragraph.split('\n')) for paragraph in paragraphs]
+
+# Join the paragraphs back together with blank lines in between
+originalText = '\n\n'.join(processedParagraphs)
+
+modifiedText = originalText
+
+for t in array1:
+    pattern = t[0]
+    replacement = t[1]
+    modifiedText = re.sub(pattern, replacement, modifiedText, flags = re.IGNORECASE | re.MULTILINE);
+
+for t in array2:
+    pattern = t[0]
+    #replacement = ' [[inpt PHON]]' + t[1] + '[[inpt TEXT]] '
+    replacement = t[1]
+    pattern = r'\b' + pattern + r'\b'
+    modifiedText = re.sub(pattern, replacement, modifiedText, flags = re.IGNORECASE | re.MULTILINE);
+
+call(["say", modifiedText])
+
+# print(modifiedText)

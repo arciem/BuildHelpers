@@ -1,0 +1,3 @@
+#!/bin/zsh
+
+aws ec2 start-instances --instance-ids i-03db5ae1335fc09b7

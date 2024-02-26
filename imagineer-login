@@ -1,0 +1,3 @@
+#!/bin/zsh
+
+ssh -i "~/.ssh/arciem-keypair.pem" ubuntu@imagineer.arciem.com

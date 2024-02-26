@@ -2,12 +2,12 @@
 
 if [ "$#" -ne 1 ]
 then
-	echo "Usage: ${0} \"Commit comment...\""
-	exit 1
+    comment="Working."
+else
+    comment=$1
 fi
 
-comment=$1
-echo "commit comment: ${comment}"
+# echo "commit comment: ${comment}"
 
 `dirname $0`/utils/gitHeader
 git commit -a -m "${comment}" || true

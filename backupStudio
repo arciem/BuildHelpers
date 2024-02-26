@@ -1,0 +1,3 @@
+#!zsh
+
+rsync -av --progress --delete --exclude '.DS_Store' --exclude '.Spotlight-V100' --exclude '.Trashes' --exclude '.DocumentRevisions-V100' --exclude '.TemporaryItems' --exclude '.fseventsd' /Volumes/Studio/ /Volumes/Studio\ Backup/

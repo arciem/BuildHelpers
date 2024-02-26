@@ -1,0 +1,13 @@
+#!/bin/sh
+
+BASENAME=${1%%.*}
+TEMPNAME=${BASENAME}.tmp
+OUTPUTNAME=${BASENAME}.txt
+
+echo "<html><head><style>body { font-size: 36pt; font-family:sans-serif; }</style></head><body>" > ${TEMPNAME}
+markdown "${1}" >> ${TEMPNAME}
+echo "</body></html>" >> ${TEMPNAME}
+
+textutil "${TEMPNAME}" -inputencoding UTF-8 -format html -convert txt -output "${OUTPUTNAME}"
+
+rm "${TEMPNAME}"

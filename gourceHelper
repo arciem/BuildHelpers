@@ -1,0 +1,27 @@
+#!/bin/zsh
+
+# https://www.ekreative.com/blog/producing-your-own-git-repository-animated-visualization-video/
+# https://github.com/acaudwell/Gource/wiki/Visualizing-Multiple-Repositories
+
+GOURCE_LOGS=./gourceLogs
+mkdir -p ${GOURCE_LOGS}
+
+REPOS=($@)
+
+for REPO in "${REPOS[@]}"
+do
+    LOG_FILE=${GOURCE_LOGS}/${REPO}.txt
+    gource --output-custom-log ${LOG_FILE} ${REPO}
+    sed -i '' -r "/\.(xc)?framework/d" ${LOG_FILE}
+    sed -i '' -r "s/Robert McNally/Wolf McNally/" ${LOG_FILE}
+    sed -i '' -r "s#(.+)\|#\1|/${REPO}#" ${LOG_FILE}
+done
+
+COMBINED_LOG=${GOURCE_LOGS}/combined.txt
+
+cat ${GOURCE_LOGS}/${^REPOS}.txt | sort -n > ${COMBINED_LOG}
+
+gource --frameless --multi-sampling --hide root,bloom --filename-time 2 --bloom-multiplier 0.5 --bloom-intensity 0.5 --elasticity 0.001 --viewport 1920x1080 --highlight-users --highlight-colour aaffaa --user-scale 1.5 --max-user-speed 200 --user-friction 0.5 --highlight-dirs --dir-name-depth 1 --dir-colour aaaaff --seconds-per-day 0.1 --auto-skip-seconds 0.1 ${GOURCE_LOGS}/combined.txt
+
+# --disable-auto-rotate
+# --fixed-user-size

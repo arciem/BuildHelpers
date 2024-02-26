@@ -1,0 +1,56 @@
+#!python3
+
+import subprocess
+import time
+import xml.etree.ElementTree as ET
+
+def load_names(file_path):
+    names = {}
+    with open(file_path, 'r') as f:
+        for line in f:
+            try:
+                id, name = line.strip().split(',')
+                names[id] = name
+            except ValueError:
+                continue  # Skip lines that can't be parsed
+    return names
+
+def parse_xml_node(node, names, indent=0):
+    entry_id = None
+    entry_name = None
+    children = list(node)
+
+    for i in range(0, len(children), 2):
+        key = children[i].text
+        val = children[i+1]
+
+        if key == "IORegistryEntryID":
+            entry_id = hex(int(val.text)).split('x')[-1]
+        elif key == "IORegistryEntryName":
+            entry_name = val.text
+
+    if entry_id or entry_name:
+        display_name = names.get(entry_id, entry_name)
+        print(f"{'  ' * indent}{entry_id} {display_name}")
+
+    for i in range(0, len(children), 2):
+        key = children[i].text
+        val = children[i+1]
+
+        if key == "IORegistryEntryChildren":
+            for child in val.findall("dict"):
+                parse_xml_node(child, names, indent + 1)
+
+def main():
+    while True:
+        names = load_names("usb-names.txt")
+        subprocess.run(["clear"])
+
+        output = subprocess.run(["ioreg", "-p", "IOUSB", "-a"], capture_output=True, text=True).stdout
+        root = ET.fromstring(output)
+        parse_xml_node(root.find(".//dict"), names)
+
+        time.sleep(5)
+
+if __name__ == "__main__":
+    main()
