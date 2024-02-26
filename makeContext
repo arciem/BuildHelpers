@@ -37,30 +37,31 @@ def list_files_and_contents(directory, output_file=None):
     top_level_directory = os.path.basename(directory.rstrip(os.sep))
     all_paths = []
     priority_paths = []
-    omitted_paths = []
     for root, dirs, files in os.walk(directory, topdown=True):
-        # Remove directories that start with '.'
+        # Sort directories and files alphabetically
+        dirs.sort()
+        files.sort()
+
+        # Remove directories and files that start with '.'
         dirs[:] = [d for d in dirs if not d.startswith('.')]
         files = [f for f in files if not f.startswith('.')]
+
         for filename in files:
             full_path = os.path.join(root, filename)
             if any(re.search(pattern, filename) for pattern in priority_files):
                 priority_paths.append(full_path)
-            elif any(re.search(pattern, filename) for pattern in omit_files):
-                omitted_paths.append(full_path)
-            else:
+            elif not any(re.search(pattern, filename) for pattern in omit_files):
                 all_paths.append(full_path)
 
-    # Prioritize certain files by moving them to the front
-    all_paths = priority_paths + all_paths
-    all_paths.sort(key=lambda x: (x not in priority_paths, x))
+    # Combine prioritized paths at the top, maintaining overall alphabetical order
+    combined_paths = priority_paths + all_paths
 
     output_lines = [f"# {top_level_directory}\n\n"]
-    for path in all_paths + omitted_paths:
+    for path in combined_paths:
         relative_path = os.path.relpath(path, directory)
         file_extension = os.path.splitext(path)[1]
         syntax_specifier = syntax_highlighting.get(file_extension, '')
-        if path in omitted_paths:
+        if any(re.search(pattern, os.path.basename(path)) for pattern in omit_files):
             output_lines.append(f"## {relative_path}\n\n*OMITTED*\n\n")
         else:
             output_lines.append(f"## {relative_path}\n\n```{syntax_specifier}\n")
