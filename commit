@@ -10,4 +10,5 @@ fi
 # echo "commit comment: ${comment}"
 
 `dirname $0`/utils/gitHeader
+git add --verbose .
 git commit -a -m "${comment}" || true

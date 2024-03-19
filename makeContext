@@ -12,14 +12,36 @@ syntax_highlighting = {
     '.swift': 'swift',
     '.py': 'python',
     '.js': 'javascript',
+    '.jsx': 'jsx',
     '.ts': 'typescript',
+    '.tsx': 'tsx',
+    '.html': 'html',
+    '.css': 'css',
+    '.scss': 'scss',
+    '.json': 'json',
+    '.xml': 'xml',
+    '.yaml': 'yaml',
+    '.md': 'markdown',
+    '.markdown': 'markdown',
+    '.sh': 'bash',
+    '.rs': 'rust',
+    '.toml': 'toml',
 }
 
 # List of regexes for prioritizing specific files
-priority_files = [r"STARTHERE"]
+priority_files = [
+    r"STARTHERE",
+    r"WIP",
+    ]
 
 # List of regexes for omitting specific files
-omit_files = [r".*\.(png|jpg|jpeg|gif|svg)"]
+omit_files = [
+    r"^OMIT-.*",
+    r"^target/.*",
+    r".*\.(png|jpg|jpeg|gif|svg|resolved|lock|xlogic)",
+    ]
+
+kickoff = "Perform the task in `STARTHERE.md`. This is the entire task: stop once you have completed it."
 
 class ChangeHandler(FileSystemEventHandler):
     def __init__(self, directory, output_file, process_func):
@@ -35,12 +57,12 @@ class ChangeHandler(FileSystemEventHandler):
 
 def list_files_and_contents(directory, output_file=None):
     top_level_directory = os.path.basename(directory.rstrip(os.sep))
-    all_paths = []
+    regular_paths = []
     priority_paths = []
     for root, dirs, files in os.walk(directory, topdown=True):
-        # Sort directories and files alphabetically
-        dirs.sort()
-        files.sort()
+        # Sort directories and files to ensure alphabetical order
+        # dirs.sort()
+        # files.sort()
 
         # Remove directories and files that start with '.'
         dirs[:] = [d for d in dirs if not d.startswith('.')]
@@ -50,11 +72,11 @@ def list_files_and_contents(directory, output_file=None):
             full_path = os.path.join(root, filename)
             if any(re.search(pattern, filename) for pattern in priority_files):
                 priority_paths.append(full_path)
-            elif not any(re.search(pattern, filename) for pattern in omit_files):
-                all_paths.append(full_path)
+            else:
+                regular_paths.append(full_path)
 
-    # Combine prioritized paths at the top, maintaining overall alphabetical order
-    combined_paths = priority_paths + all_paths
+    # Combine lists, ensuring priority files are at the beginning
+    combined_paths = sorted(priority_paths) + sorted(regular_paths)
 
     output_lines = [f"# {top_level_directory}\n\n"]
     for path in combined_paths:
@@ -64,16 +86,18 @@ def list_files_and_contents(directory, output_file=None):
         if any(re.search(pattern, os.path.basename(path)) for pattern in omit_files):
             output_lines.append(f"## {relative_path}\n\n*OMITTED*\n\n")
         else:
-            output_lines.append(f"## {relative_path}\n\n```{syntax_specifier}\n")
+            output_lines.append(f"## {relative_path}\n\n````{syntax_specifier}\n")
             try:
                 with open(path, 'r') as file:
                     content = file.read()
                     if content.endswith('\n'):
-                        output_lines.append(content.rstrip('\n') + '\n```\n\n')
+                        output_lines.append(content.rstrip('\n') + '\n````\n\n')
                     else:
-                        output_lines.append(content + '\n```\n\n')
+                        output_lines.append(content + '\n````\n\n')
             except Exception as e:
-                output_lines.append(f"Error reading file {relative_path}: {e}\n```\n\n")
+                output_lines.append(f"Error reading file {relative_path}: {e}\n")
+
+    output_lines.append(kickoff)
 
     if output_file:
         with open(output_file, 'w') as f:
