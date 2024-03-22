@@ -41,6 +41,7 @@ omit_files = [
     r".*\.(png|jpg|jpeg|gif|svg|resolved|lock|xlogic)",
     ]
 
+kickoff_file = "STARTHERE.md"
 kickoff = "Perform the task in `STARTHERE.md`. This is the entire task: stop once you have completed it."
 
 class ChangeHandler(FileSystemEventHandler):
@@ -59,7 +60,13 @@ def list_files_and_contents(directory, output_file=None):
     top_level_directory = os.path.basename(directory.rstrip(os.sep))
     regular_paths = []
     priority_paths = []
+    kickoff_present = False
+
     for root, dirs, files in os.walk(directory, topdown=True):
+        # Check for kickoff_file only at the top level
+        if root == directory:
+            kickoff_present = kickoff_file in files
+
         # Sort directories and files to ensure alphabetical order
         # dirs.sort()
         # files.sort()
@@ -97,7 +104,8 @@ def list_files_and_contents(directory, output_file=None):
             except Exception as e:
                 output_lines.append(f"Error reading file {relative_path}: {e}\n")
 
-    output_lines.append(kickoff)
+    if kickoff_present:
+        output_lines.append(kickoff)
 
     if output_file:
         with open(output_file, 'w') as f:
