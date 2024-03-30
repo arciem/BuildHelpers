@@ -38,7 +38,7 @@ priority_files = [
 omit_files = [
     r"^OMIT-.*",
     r"^target/.*",
-    r".*\.(png|jpg|jpeg|gif|svg|resolved|lock|xlogic)",
+    r".*\.(png|jpg|jpeg|gif|svg|resolved|lock|xlogic|pyc)",
     ]
 
 kickoff_file = "STARTHERE.md"
@@ -90,17 +90,21 @@ def list_files_and_contents(directory, output_file=None):
         relative_path = os.path.relpath(path, directory)
         file_extension = os.path.splitext(path)[1]
         syntax_specifier = syntax_highlighting.get(file_extension, '')
-        if any(re.search(pattern, os.path.basename(path)) for pattern in omit_files):
-            output_lines.append(f"## {relative_path}\n\n*OMITTED*\n\n")
+        if os.path.basename(path) == output_file:
+            continue
+        elif any(re.search(pattern, os.path.basename(path)) for pattern in omit_files):
+            # output_lines.append(f"## {relative_path}\n\n*OMITTED*\n\n")
+            continue
         else:
-            output_lines.append(f"## {relative_path}\n\n````{syntax_specifier}\n")
             try:
                 with open(path, 'r') as file:
                     content = file.read()
-                    if content.endswith('\n'):
-                        output_lines.append(content.rstrip('\n') + '\n````\n\n')
-                    else:
-                        output_lines.append(content + '\n````\n\n')
+                    # Omit if the first line contains `%OMIT%` anywhere within it
+                    if '%OMIT%' in content.split('\n', maxsplit=1)[0]:
+                        output_lines.append(f"## {relative_path}\n\n*OMITTED*\n\n")
+                        continue
+                    output_lines.append(f"## {relative_path}\n\n````{syntax_specifier}\n")
+                    output_lines.append(content.rstrip() + '\n````\n\n')
             except Exception as e:
                 output_lines.append(f"Error reading file {relative_path}: {e}\n")
 

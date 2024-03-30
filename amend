@@ -1,0 +1,13 @@
+#!/bin/bash
+
+if [ "$#" -eq 1 ]
+then
+    comment=$1
+    `dirname $0`/utils/gitHeader
+    git add -A --verbose .
+    git commit --amend -m "${comment}" || true
+else
+    `dirname $0`/utils/gitHeader
+    git add -A --verbose .
+    git commit --amend --no-edit || true
+fi
