@@ -37,8 +37,9 @@ priority_files = [
 # List of regexes for omitting specific files
 omit_files = [
     r"^OMIT-.*",
-    r"^target/.*",
-    r".*\.(png|jpg|jpeg|gif|svg|resolved|lock|xlogic|pyc)",
+    r"^.*/target/.*",
+    r"^.*\.xcworkspace/.*",
+    r".*\.(png|jpg|jpeg|gif|svg|pdf|resolved|lock|webloc|xlogic|pyc)",
     ]
 
 kickoff_file = "STARTHERE.md"
@@ -67,9 +68,10 @@ def list_files_and_contents(directory, output_file=None):
         if root == directory:
             kickoff_present = kickoff_file in files
 
-        # Sort directories and files to ensure alphabetical order
-        # dirs.sort()
-        # files.sort()
+        # Check for OMIT file in the current directory
+        if any(f.startswith('OMIT') for f in files):
+            dirs[:] = []  # Clear dirs to skip subdirectories
+            continue
 
         # Remove directories and files that start with '.'
         dirs[:] = [d for d in dirs if not d.startswith('.')]
@@ -85,22 +87,24 @@ def list_files_and_contents(directory, output_file=None):
     # Combine lists, ensuring priority files are at the beginning
     combined_paths = sorted(priority_paths) + sorted(regular_paths)
 
-    output_lines = [f"# {top_level_directory}\n\n"]
+    output_lines = []
+    if top_level_directory != '.':
+        output_lines.append(f"# {top_level_directory}\n\n")
     for path in combined_paths:
         relative_path = os.path.relpath(path, directory)
         file_extension = os.path.splitext(path)[1]
         syntax_specifier = syntax_highlighting.get(file_extension, '')
         if os.path.basename(path) == output_file:
             continue
-        elif any(re.search(pattern, os.path.basename(path)) for pattern in omit_files):
+        elif any(re.search(pattern, path) for pattern in omit_files):
             # output_lines.append(f"## {relative_path}\n\n*OMITTED*\n\n")
             continue
         else:
             try:
                 with open(path, 'r') as file:
                     content = file.read()
-                    # Omit if the first line contains `%OMIT%` anywhere within it
-                    if '%OMIT%' in content.split('\n', maxsplit=1)[0]:
+                    # Omit if the first line contains `OMIT` anywhere within it
+                    if 'OMIT' in content.split('\n', maxsplit=1)[0]:
                         output_lines.append(f"## {relative_path}\n\n*OMITTED*\n\n")
                         continue
                     output_lines.append(f"## {relative_path}\n\n````{syntax_specifier}\n")
