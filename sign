@@ -1,0 +1,27 @@
+#!/bin/bash
+# sign_inplace.sh
+# This script clear-signs a given file using GPG and replaces the original file with the signed version.
+
+set -euo pipefail
+
+if [ "$#" -ne 1 ]; then
+  echo "Usage: $0 <file>"
+  exit 1
+fi
+
+input_file="$1"
+
+if [ ! -f "$input_file" ]; then
+  echo "Error: File '$input_file' not found."
+  exit 1
+fi
+
+# Create a secure temporary file and remove it immediately so gpg won't complain.
+temp_file="$(mktemp)"
+rm "$temp_file"
+
+# Clear-sign the file and output to the temporary file.
+gpg --clearsign --output "$temp_file" "$input_file"
+
+# Replace the original file with the signed version.
+mv -f "$temp_file" "$input_file"
