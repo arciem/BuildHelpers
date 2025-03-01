@@ -5,6 +5,7 @@
 # and rewrites them as a JPEG at 0.7 quality.
 # If the original was a .jpg, it replaces it.
 # If the original was a .jpeg or .png, it creates a .jpg and removes the old file.
+# If the compressed file is still over 500K, scales it down by half in both dimensions.
 
 DIR="$1"
 
@@ -17,6 +18,9 @@ fi
 # Higher is better quality, but larger file size
 QUALITY=70
 
+# Size threshold (500K)
+SIZE_THRESHOLD=500000
+
 # Find all jpg/jpeg/png files larger than 500K
 find "$DIR" -type f \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' \) -size +500k | while read -r FILE; do
   EXT_LOWER=$(echo "${FILE##*.}" | tr '[:upper:]' '[:lower:]')
@@ -26,12 +30,47 @@ find "$DIR" -type f \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' \) -s
     # Create a temporary JPEG, then overwrite the original
     TMPFILE="$(mktemp /tmp/sips.XXXXXX).jpg"
     sips --setProperty format jpeg --setProperty formatOptions $QUALITY "$FILE" -o "$TMPFILE"
+
+    # Check if compressed file is still over the threshold
+    if [ $(stat -f%z "$TMPFILE") -gt $SIZE_THRESHOLD ]; then
+      # Get current dimensions
+      WIDTH=$(sips -g pixelWidth "$TMPFILE" | awk '/pixelWidth/ {print $2}')
+      HEIGHT=$(sips -g pixelHeight "$TMPFILE" | awk '/pixelHeight/ {print $2}')
+
+      # Calculate half dimensions
+      NEW_WIDTH=$((WIDTH / 2))
+      NEW_HEIGHT=$((HEIGHT / 2))
+
+      # Scale down by 50%
+      sips --resampleWidth $NEW_WIDTH --resampleHeight $NEW_HEIGHT "$TMPFILE" --out "$TMPFILE"
+    fi
+
     cp "$TMPFILE" "$FILE"
     rm -f "$TMPFILE"
   elif [ "$EXT_LOWER" = "jpeg" ] || [ "$EXT_LOWER" = "png" ]; then
     # Convert to .jpg, then remove the original
     OUTFILE="${BASE}.jpg"
-    sips --setProperty format jpeg --setProperty formatOptions $QUALITY "$FILE" -o "$OUTFILE"
+    TMPFILE="$(mktemp /tmp/sips.XXXXXX).jpg"
+
+    # First compress with quality setting
+    sips --setProperty format jpeg --setProperty formatOptions $QUALITY "$FILE" -o "$TMPFILE"
+
+    # Check if compressed file is still over the threshold
+    if [ $(stat -f%z "$TMPFILE") -gt $SIZE_THRESHOLD ]; then
+      # Get current dimensions
+      WIDTH=$(sips -g pixelWidth "$TMPFILE" | awk '/pixelWidth/ {print $2}')
+      HEIGHT=$(sips -g pixelHeight "$TMPFILE" | awk '/pixelHeight/ {print $2}')
+
+      # Calculate half dimensions
+      NEW_WIDTH=$((WIDTH / 2))
+      NEW_HEIGHT=$((HEIGHT / 2))
+
+      # Scale down by 50%
+      sips --resampleWidth $NEW_WIDTH --resampleHeight $NEW_HEIGHT "$TMPFILE" --out "$TMPFILE"
+    fi
+
+    cp "$TMPFILE" "$OUTFILE"
+    rm -f "$TMPFILE"
     rm -f "$FILE"
   fi
 done
