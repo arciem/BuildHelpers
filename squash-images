@@ -5,7 +5,7 @@
 # and rewrites them as a JPEG at 0.7 quality.
 # If the original was a .jpg, it replaces it.
 # If the original was a .jpeg or .png, it creates a .jpg and removes the old file.
-# If the compressed file is still over 500K, scales it down by half in both dimensions.
+# If the compressed file is still over 500K, scales it down while maintaining aspect ratio.
 
 DIR="$1"
 
@@ -20,6 +20,9 @@ QUALITY=70
 
 # Size threshold (500K)
 SIZE_THRESHOLD=500000
+
+# Minimum dimension (don't scale below this)
+MIN_DIMENSION=1500
 
 # Function to compress image and resize if needed
 compress_image() {
@@ -36,12 +39,28 @@ compress_image() {
     local width=$(sips -g pixelWidth "$tmpfile" | awk '/pixelWidth/ {print $2}')
     local height=$(sips -g pixelHeight "$tmpfile" | awk '/pixelHeight/ {print $2}')
 
-    # Calculate half dimensions
-    local new_width=$((width / 2))
-    local new_height=$((height / 2))
+    # Only scale if either dimension is larger than MIN_DIMENSION
+    if [ "$width" -gt "$MIN_DIMENSION" ] || [ "$height" -gt "$MIN_DIMENSION" ]; then
+      local new_width=$width
+      local new_height=$height
 
-    # Scale down by 50%
-    sips --resampleWidth $new_width --resampleHeight $new_height "$tmpfile" --out "$tmpfile"
+      # Calculate aspect ratio
+      local aspect_ratio=$(echo "scale=6; $width / $height" | bc)
+
+      # Determine which dimension to scale to MIN_DIMENSION
+      if [ "$width" -gt "$height" ]; then
+        # Width is longer, scale it to MIN_DIMENSION
+        new_width=$MIN_DIMENSION
+        new_height=$(echo "scale=0; $MIN_DIMENSION / $aspect_ratio" | bc)
+      else
+        # Height is longer, scale it to MIN_DIMENSION
+        new_height=$MIN_DIMENSION
+        new_width=$(echo "scale=0; $MIN_DIMENSION * $aspect_ratio" | bc)
+      fi
+
+      # Scale down image while preserving aspect ratio
+      sips --resampleWidth $new_width "$tmpfile" --out "$tmpfile"
+    fi
   fi
 
   # Copy to final destination
