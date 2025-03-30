@@ -1,44 +1,134 @@
 #!/bin/bash
 
 # Usage: ./squashAhead "Your new commit message"
+#
+# Squashes all commits on the current branch that are ahead of its upstream
+# counterpart (origin/BRANCH) into a single commit with the provided message.
 
+# Exit immediately if a command exits with a non-zero status.
 set -e
+
+# --- Configuration ---
+# Attempt to bypass editor prompts during rebase and commit amend,
+# as we provide the necessary inputs programmatically.
 export GIT_SEQUENCE_EDITOR=true
 export GIT_EDITOR=true
+# ---
 
+# --- Determine Commit Message ---
+COMMIT_MSG=""
 if [ -z "$1" ]; then
-  COMMIT_MSG="Working."
+  # Default commit message if none provided
+  COMMIT_MSG="Squashed changes."
+  echo "No commit message provided. Using default: '$COMMIT_MSG'"
 else
   COMMIT_MSG="$1"
 fi
+# ---
 
-# Determine current branch
+# --- Get Branch Info ---
+# Determine current branch name
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
-
-# Determine how many commits ahead we are
-AHEAD_COUNT=$(git rev-list --count origin/$BRANCH..HEAD)
-
-if [ "$AHEAD_COUNT" -eq 0 ]; then
-  echo "Nothing to squash — you're not ahead of origin/$BRANCH."
-  exit 0
+if [ "$BRANCH" = "HEAD" ]; then
+  echo "❌ Error: You are in a detached HEAD state. Cannot determine branch."
+  exit 1
 fi
 
-echo "Squashing $AHEAD_COUNT commits on branch $BRANCH..."
+# Construct the corresponding remote branch name
+REMOTE_BRANCH="origin/$BRANCH"
 
-# Perform the interactive rebase in non-interactive mode (auto squash)
-# Set up rebase instructions manually
-REBASE_CMD="pick"
-for ((i = 1; i < AHEAD_COUNT; i++)); do
-  REBASE_CMD+="\nsquash"
-done
+# Verify that the remote branch exists
+if ! git rev-parse --verify --quiet "$REMOTE_BRANCH" > /dev/null; then
+  echo "❌ Error: Remote branch '$REMOTE_BRANCH' not found."
+  echo "Ensure your branch is pushed and tracking a remote, or the remote 'origin' exists."
+  exit 1
+fi
+# ---
 
-# Start the rebase using a generated todo list
-git rebase -i --autosquash --root --autostash --quiet --keep-empty --strategy=recursive HEAD~$AHEAD_COUNT <<EOF
-$REBASE_CMD
-EOF
+# --- Calculate Commits Ahead ---
+# Determine how many commits the local branch is ahead of the remote branch
+# Use the ... syntax for symmetric difference range, handles cases where remote moved.
+# However, for simply counting *ahead*, the .. syntax is correct.
+AHEAD_COUNT=$(git rev-list --count "$REMOTE_BRANCH"..HEAD)
 
-# Now rewrite the commit message
+if [ "$AHEAD_COUNT" -eq 0 ]; then
+  echo "✅ Nothing to squash — branch '$BRANCH' is not ahead of '$REMOTE_BRANCH'."
+  exit 0
+elif [ "$AHEAD_COUNT" -eq 1 ]; then
+  echo "ℹ️ Only one commit ahead. Amending commit message."
+  # Amend the single commit's message instead of rebasing
+  git commit --amend -m "$COMMIT_MSG"
+  echo "✅ Amended commit message:"
+  echo "$COMMIT_MSG"
+  exit 0
+fi
+# ---
+
+# --- Prepare Rebase ---
+echo "⏳ Squashing $AHEAD_COUNT commits on branch '$BRANCH' ahead of '$REMOTE_BRANCH'..."
+
+# Generate the rebase instruction list: pick the first, squash the rest.
+# The first commit listed by rev-list is the newest (HEAD).
+# The rebase -i todo list expects oldest first.
+# We need to pick the *oldest* commit ahead (the one based on REMOTE_BRANCH)
+# and squash the newer ones onto it.
+
+# Get the SHA of the base commit (the one REMOTE_BRANCH points to)
+BASE_COMMIT=$(git rev-parse "$REMOTE_BRANCH")
+# Get the list of SHAs ahead of the base, oldest first
+COMMITS_AHEAD=$(git rev-list --reverse "$REMOTE_BRANCH"..HEAD)
+
+# Build the rebase commands programmatically
+FIRST_COMMIT=true
+REBASE_CMD=""
+while IFS= read -r commit_sha; do
+  ABBREV_SHA=$(git rev-parse --short "$commit_sha")
+  COMMIT_SUBJECT=$(git log --format=%s -n 1 "$commit_sha")
+  if $FIRST_COMMIT; then
+    REBASE_CMD="pick $ABBREV_SHA $COMMIT_SUBJECT"
+    FIRST_COMMIT=false
+  else
+    REBASE_CMD+=$'\n'"squash $ABBREV_SHA $COMMIT_SUBJECT"
+  fi
+done <<< "$COMMITS_AHEAD"
+# ---
+
+# --- Perform Rebase ---
+# Perform the interactive rebase non-interactively using the generated command list.
+# Use REMOTE_BRANCH as the base for the rebase.
+# Removed --root (incorrect for this use case).
+# Removed --strategy=recursive (usually not needed for linear squashes).
+# Removed --autosquash (redundant with manual command list).
+# Added check to ensure REBASE_CMD is not empty
+if [ -z "$REBASE_CMD" ]; then
+    echo "❌ Error: Failed to generate rebase commands."
+    exit 1
+fi
+
+# Use a temporary file for the rebase sequence to handle complex branch names or commands
+GIT_SEQUENCE_FILE=$(mktemp)
+echo "$REBASE_CMD" > "$GIT_SEQUENCE_FILE"
+GIT_SEQUENCE_EDITOR="$GIT_SEQUENCE_FILE" git rebase -i --autostash --keep-empty --quiet "$REMOTE_BRANCH"
+rm "$GIT_SEQUENCE_FILE" # Clean up temp file
+
+# Note: The rebase will pause here for the user to edit the combined commit message
+# because GIT_EDITOR=true only prevents the editor for the *sequence*, not the message consolidation.
+# To fully automate, we need to handle the commit message step.
+# For simplicity, this revised script lets git open the editor for message consolidation.
+# The commit --amend step afterwards will overwrite it anyway.
+# ---
+
+# --- Finalize Commit ---
+# Amend the resulting squashed commit with the desired final message.
+# This overwrites any message consolidated during the rebase editor step.
 git commit --amend -m "$COMMIT_MSG"
+# ---
 
-echo "✅ Squashed $AHEAD_COUNT commits into one with message:"
-echo "$COMMIT_MSG"
+# --- Confirmation ---
+echo "✅ Squashed $AHEAD_COUNT commits into one on branch '$BRANCH' with message:"
+echo "-> $COMMIT_MSG"
+echo "⚠️ Remember to push with force-with-lease if you need to update the remote:"
+echo "   git push --force-with-lease origin $BRANCH"
+# ---
+
+exit 0
