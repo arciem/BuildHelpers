@@ -3,13 +3,14 @@
 # Usage: ./squashAhead "Your new commit message"
 
 set -e
+export GIT_SEQUENCE_EDITOR=true
+export GIT_EDITOR=true
 
 if [ -z "$1" ]; then
-  echo "Usage: $0 \"Your new commit message\""
-  exit 1
+  COMMIT_MSG="Working."
+else
+  COMMIT_MSG="$1"
 fi
-
-COMMIT_MSG="$1"
 
 # Determine current branch
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
@@ -18,7 +19,7 @@ BRANCH=$(git rev-parse --abbrev-ref HEAD)
 AHEAD_COUNT=$(git rev-list --count origin/$BRANCH..HEAD)
 
 if [ "$AHEAD_COUNT" -eq 0 ]; then
-  echo "Nothing to squash — you’re not ahead of origin/$BRANCH."
+  echo "Nothing to squash — you're not ahead of origin/$BRANCH."
   exit 0
 fi
 
