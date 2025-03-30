@@ -10,7 +10,7 @@ set -e
 
 # --- Configuration ---
 # Attempt to bypass editor prompts during rebase and commit amend,
-# as we provide the necessary inputs programmatically.
+# as we provide the necessary inputs programmatically. some changes
 export GIT_SEQUENCE_EDITOR=true
 export GIT_EDITOR=true
 # ---
