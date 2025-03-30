@@ -1,0 +1,43 @@
+#!/bin/bash
+
+# Usage: ./squash-ahead.sh "Your new commit message"
+
+set -e
+
+if [ -z "$1" ]; then
+  echo "Usage: $0 \"Your new commit message\""
+  exit 1
+fi
+
+COMMIT_MSG="$1"
+
+# Determine current branch
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+
+# Determine how many commits ahead we are
+AHEAD_COUNT=$(git rev-list --count origin/$BRANCH..HEAD)
+
+if [ "$AHEAD_COUNT" -eq 0 ]; then
+  echo "Nothing to squash — you’re not ahead of origin/$BRANCH."
+  exit 0
+fi
+
+echo "Squashing $AHEAD_COUNT commits on branch $BRANCH..."
+
+# Perform the interactive rebase in non-interactive mode (auto squash)
+# Set up rebase instructions manually
+REBASE_CMD="pick"
+for ((i = 1; i < AHEAD_COUNT; i++)); do
+  REBASE_CMD+="\nsquash"
+done
+
+# Start the rebase using a generated todo list
+git rebase -i --autosquash --root --autostash --quiet --keep-empty --strategy=recursive HEAD~$AHEAD_COUNT <<EOF
+$REBASE_CMD
+EOF
+
+# Now rewrite the commit message
+git commit --amend -m "$COMMIT_MSG"
+
+echo "✅ Squashed $AHEAD_COUNT commits into one with message:"
+echo "$COMMIT_MSG"
