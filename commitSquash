@@ -3,23 +3,19 @@
 # Usage: ./commitSquash "Your new commit message"
 #
 # Squashes all commits on the current branch that are ahead of its upstream
-# counterpart (origin/BRANCH) into a single commit with the provided message.
+# counterpart (origin/BRANCH) into a single commit with the provided message,
+# using the 'reset --soft' method.
 
 # Exit immediately if a command exits with a non-zero status.
 set -e
 
 # --- Configuration ---
-# Set GIT_EDITOR to 'true' (the command, usually /bin/true or /usr/bin/true)
-# to prevent the commit message editor during rebase consolidation.
-# The final message is set via --amend later.
-export GIT_EDITOR=true
-# We will provide the sequence via stdin, so GIT_SEQUENCE_EDITOR is not needed.
+# GIT_EDITOR is not needed for this method
 # ---
 
 # --- Determine Commit Message ---
 COMMIT_MSG=""
 if [ -z "$1" ]; then
-  # Default commit message if none provided
   COMMIT_MSG="Squashed changes."
   echo "No commit message provided. Using default: '$COMMIT_MSG'"
 else
@@ -28,93 +24,53 @@ fi
 # ---
 
 # --- Get Branch Info ---
-# Determine current branch name
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
 if [ "$BRANCH" = "HEAD" ]; then
   echo "❌ Error: You are in a detached HEAD state. Cannot determine branch."
   exit 1
 fi
-
-# Construct the corresponding remote branch name
 REMOTE_BRANCH="origin/$BRANCH"
-
-# Verify that the remote branch exists
 if ! git rev-parse --verify --quiet "$REMOTE_BRANCH" > /dev/null; then
   echo "❌ Error: Remote branch '$REMOTE_BRANCH' not found."
-  echo "Ensure your branch is pushed and tracking a remote, or the remote 'origin' exists."
   exit 1
 fi
 # ---
 
 # --- Calculate Commits Ahead ---
+# Check using rev-list first to avoid unnecessary work if already synced
 AHEAD_COUNT=$(git rev-list --count "$REMOTE_BRANCH"..HEAD)
 
 if [ "$AHEAD_COUNT" -eq 0 ]; then
   echo "✅ Nothing to squash — branch '$BRANCH' is not ahead of '$REMOTE_BRANCH'."
   exit 0
-elif [ "$AHEAD_COUNT" -eq 1 ]; then
-  echo "ℹ️ Only one commit ahead. Amending commit message instead of squashing."
-  # Amend the single commit's message
-  git commit --amend -m "$COMMIT_MSG"
-  echo "✅ Amended commit message:"
-  echo "-> $COMMIT_MSG"
-  exit 0
 fi
 # ---
 
-# --- Prepare Rebase ---
-echo "⏳ Squashing $AHEAD_COUNT commits on branch '$BRANCH' ahead of '$REMOTE_BRANCH'..."
+# --- Perform Squash using reset --soft ---
+echo "⏳ Squashing $AHEAD_COUNT commits on branch '$BRANCH' ahead of '$REMOTE_BRANCH' using 'reset --soft'..."
 
-# Generate the rebase instruction list: pick the first (oldest), squash the rest.
-# Get the list of SHAs ahead of the base, oldest first.
-COMMITS_AHEAD=$(git rev-list --reverse "$REMOTE_BRANCH"..HEAD)
+# Reset the current branch pointer back to the remote branch's position,
+# but keep all the accumulated changes from the commits ahead staged (--soft).
+echo "Running: git reset --soft $REMOTE_BRANCH"
+if ! git reset --soft "$REMOTE_BRANCH"; then
+    echo "❌ Error: git reset --soft failed."
+    exit 1
+fi
+echo "Reset complete. Staging contains combined changes."
 
-# Build the rebase commands programmatically
-FIRST_COMMIT=true
-REBASE_CMD=""
-while IFS= read -r commit_sha; do
-  # Using full SHA in commands for robustness, though short SHA usually works.
-  COMMIT_SUBJECT=$(git log --format=%s -n 1 "$commit_sha") # Get subject for clarity
-  if $FIRST_COMMIT; then
-    # Use 'edit' for the first commit instead of 'pick'. This ensures the rebase
-    # pauses *after* the squash operations, allowing the subsequent 'commit --amend'
-    # to modify the correct (squashed) commit, even if GIT_EDITOR=true fails
-    # to suppress the consolidation message editor perfectly.
-    REBASE_CMD="edit $commit_sha $COMMIT_SUBJECT"
-    FIRST_COMMIT=false
-  else
-    REBASE_CMD+=$'\n'"squash $commit_sha $COMMIT_SUBJECT"
-  fi
-done <<< "$COMMITS_AHEAD"
-
-if [ -z "$REBASE_CMD" ]; then
-    echo "❌ Error: Failed to generate rebase commands."
+# Commit the staged changes as a single new commit
+# Use --allow-empty in case the net change was zero.
+echo "Running: git commit --allow-empty -m \"$COMMIT_MSG\""
+if ! git commit --allow-empty -m "$COMMIT_MSG"; then
+    echo "❌ Error: git commit failed."
     exit 1
 fi
 # ---
 
-# --- Perform Rebase ---
-# Perform the interactive rebase non-interactively by feeding the generated
-# command list via standard input.
-# GIT_EDITOR=true should handle the commit message consolidation step.
-git rebase -i --autostash --keep-empty --quiet "$REMOTE_BRANCH" <<EOF
-$REBASE_CMD
-EOF
-
-# The rebase should now be paused after the 'edit' command.
-# ---
-
-# --- Finalize Commit ---
-# Amend the commit we stopped at (which now contains all squashed changes)
-# with the desired final message. Using --no-edit if the message consolidation
-# during rebase somehow worked, or just -m to overwrite regardless.
-# Then continue the rebase, which finishes immediately as there's nothing after the 'edit'.
-git commit --amend -m "$COMMIT_MSG"
-git rebase --continue
-# ---
-
 # --- Confirmation ---
-echo "✅ Squashed $AHEAD_COUNT commits into one on branch '$BRANCH' with message:"
+# Get the new commit hash for confirmation
+NEW_HEAD=$(git rev-parse HEAD)
+echo "✅ Squashed $AHEAD_COUNT commits into one new commit ($NEW_HEAD) on branch '$BRANCH' with message:"
 echo "-> $COMMIT_MSG"
 echo "⚠️ Remember to push with force-with-lease if you need to update the remote:"
 echo "   git push --force-with-lease origin $BRANCH"
